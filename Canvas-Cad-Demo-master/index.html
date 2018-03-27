@@ -22,8 +22,15 @@
     <script type="text/javascript" src="js/akxy-js/akxy-canvas.js"></script>
     <script type="text/javascript" src="js/akxy-js/heatmap.js"></script>
     <script>
-        let p = new Promise;
-        console.log(p)
+        let p = new Promise(function(resolve,reject){
+            if(1){
+                resolve('data');
+            }else{
+                reject('err')
+            }
+
+
+        })
 
     </script>
 </body>
