@@ -1,0 +1,250 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas绘制矿图</title>
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+    <link rel="stylesheet" type="text/css" href="css/font-awesome.css">
+</head>
+<body>
+    <div class="page-container">
+        <div class="left-content">
+            <div class="mother-grid-inner">
+                <div class="inner-blockChart">
+                    <div>
+                        <div class="col-md-6">
+                            <form class="form-horizontal">
+                                <fieldset>
+                                    <div id="demo" class="geo-chart1">
+                                    </div>
+                                    <div>
+                                        <input type="button" name="" value="随机定位" id="position" />
+                                    </div>
+                                </fieldset>
+                            </form>
+
+                            <div class="clearfix">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="geo-chart2" id="main" style="position: relative">
+                                <div style="position: absolute; right: 20px">
+                                    <div class="geo-type">
+                                        <a href="javascript:;" onclick="showProfile()" title="剖面图"><span class="span-profile fa fa-cube "></span></a>
+                                    </div>
+                                    <div class="geo-type">
+                                        <a href="javascript:;" onclick="showAll()" title="平面剖面图"><span class="span-profile fa fa-clone "></span></a>
+                                    </div>
+                                    <div class="geo-type">
+                                        <a href="javascript:;" onclick="showPlane()" title="平面图"><span class="span-plane fa fa-square-o"></span></a>
+                                    </div>
+                                </div>
+                                <div class="geo-plane" id="CadCanvas">
+                                </div>
+                                <div class="geo-profile" id="CadProfile">
+                                </div>
+                            </div>
+
+                        </div>
+                        <div class="clearfix">
+                        </div>
+                        <div style="bottom: 0; opacity: 1; margin-bottom: 1em; text-align: center;">
+                            &nbsp;&nbsp;<span id="spanx" style="font: 15px '微软雅黑'; color: black">X = 0</span>&nbsp;&nbsp;
+                                    <span id="spany" style="font: 15px '微软雅黑'; color: black">Y = 0</span>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="clearfix">
+                </div>
+                <div class="copyrights">
+                    <p>
+                        Copyright &copy; 2018. <a href="http://www.wuyandong.me">wuyandong.me</a> All rights reserved.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="clearfix">
+        </div>
+    </div>
+    <script type="text/javascript" src="js/jquery.min.js"></script>
+    <script type="text/javascript" src="js/akxy-js/akxy-canvas.js"></script>
+    <script type="text/javascript" src="js/akxy-js/heatmap.js"></script>
+    <script>
+        //加载左侧Cad矿图
+        var cadInfo, stressInfo, demoLayer, middleX, middleY;
+        var pointSize = {
+            stress: 4,
+            support: 2,
+            quake: 6,
+            sound: 2
+        };
+        var demoDiv = document.getElementById("demo");
+
+        $.ajax({ //请求矿图信息
+            type: "GET",
+            url: "yangcheng.json",
+            dataType: "json",
+            async: false,
+            success: function (data) {
+                cadInfo = data;
+                var config = {
+                    container: demoDiv,
+                    pointSize: pointSize
+                };
+                akxyCad.config(config);
+                akxyCad.loadCad(cadInfo);
+
+                demoLayer = akxyCad.getLayer();
+                middleX = akxyCad.getmiddleX();
+                middleY = akxyCad.getmiddleY();
+                //微震  qiu
+                // var quakeInfo = [{ "OccurrenceTime": "2017-06-22 02:50:58", "X": 11574.6, "Y": 10394.3, "Z": -810.6, "ShowEnergy": "7.1E3", "Energy": 7092.743652, "AreaId": "21" }];
+                // akxyCad.drawQuake(quakeInfo);
+                stressInfo = [{ "MPName": "第七组8米皮", "AcquisitionTime": "2017-08-04 01:59:47", "PValue": "15.9", "ZFValue": "100.02%", "X": 11574.99805, "Y": 10357.84961, "Z": -848.5, "MPId": 100150, "AreaId": "21", "LevelInfo": "中等冲击,2", "Is": 0.618232966606092, "UpandDown": "1" }];
+                //  应力
+                akxyCad.drawStress(stressInfo);
+                var earthSoundInfo = [{ "OccurrenceTime": "2017-06-22 02:50:58", "X": 11574.6, "Y": 10394.3, "Z": -810.6, "ShowEnergy": "7.1E3", "Energy": 7092.743652, "AreaId": "21" ,"Is": 0.218232966606092}];
+                akxyCad.drawEarthSound(earthSoundInfo)
+
+
+                //  钻屑量 李元杰 长条  用不到
+                $.ajax({ //请求矿图信息
+                    type: "GET",
+                    url: "drillbit.json",
+                    dataType: "json",
+                    success: function (data) {
+                        akxyCad.setLayer(demoLayer); //设置当前矿图的Layer对象
+                        akxyCad.drawDrillBit(data);
+                    }
+                })
+
+                //加载预警特效。
+                //PS: 如果页面仅仅只加载一次矿图可以使用类库中封装好的特效方法（即把akxy - canvas中227行setInterval方法解除注释即可）
+                var canvasSE = document.createElement("canvas");
+                var contextSE = canvasSE.getContext("2d");
+                canvasSE.style.cssText = 'position:absolute;left:0;top:0;';
+                canvasSE.width = parseInt(demoDiv.clientWidth);
+                canvasSE.height = parseInt(demoDiv.clientHeight);
+                canvasSE.style.width = parseInt(demoDiv.clientWidth) + "px";
+                canvasSE.style.height = parseInt(demoDiv.clientHeight) + "px";
+                demoDiv.appendChild(canvasSE);
+                
+                setInterval(setChange, 100);
+                
+                var r = 1;
+                function setChange() {
+                    akxyCad.setLayer(demoLayer);
+                    var pointsofWarn = akxyCad.getpointsofWarn();
+                    contextSE.clearRect(0, 0, contextSE.canvas.width, contextSE.canvas.height);
+                    for (var i = 0; i < pointsofWarn.length; i++) {
+                        var grad = contextSE.createRadialGradient(pointsofWarn[i].x, pointsofWarn[i].y, 1, pointsofWarn[i].x, pointsofWarn[i].y, r);
+                        grad.addColorStop(0, 'rgba(168,84,93,0)');
+                        grad.addColorStop(0.5, 'rgba(172,55,73,0)');
+                        grad.addColorStop(1, '#ff3333');
+                        contextSE.strokeStyle = 'red';
+                        contextSE.fillStyle = grad;
+                        contextSE.beginPath();
+                        contextSE.arc(pointsofWarn[i].x, pointsofWarn[i].y, r++, 0, 2 * Math.PI);
+                        contextSE.closePath();
+                        contextSE.stroke();
+                        contextSE.fill();
+                    }
+                    r++;
+                    if (r >= 30) {
+                        r = 1;
+                    }
+                    // 只有一个的时候就注释这些
+                }
+            }
+        })
+
+        //随机定位
+        $('#position').click(function (e) {
+            e.preventDefault();
+            var length = stressInfo.length;
+            var i = Math.round(Math.random() * length);
+            akxyCad.setLayer(demoLayer); //设置当前矿图的Layer对象
+            //goTo 是定位方法
+            akxyCad.goTo(1000, { x: (stressInfo[i].X - middleX), y: (stressInfo[i].Y - middleY) }, "images/cross.png");
+        });
+
+        // //加载右侧平剖面
+        // var planeLayer, profileLayer;
+        // var planeIndex = 0, profileIndex = 0, allIndex = 0;
+
+        // var divPlane = document.getElementById("CadCanvas");
+        // var configPlane = {  //配置config
+        //     container: divPlane,
+        //     isTrueCoordinate: true,
+        //     pointSize: pointSize
+        // };
+        // akxyCad.config(configPlane); //加载config
+        // planeLayer = akxyCad.getLayer(); //获取当前平面的Layer对象（用于在多个div下绘制图形时）
+
+        // var divProfile = document.getElementById("CadProfile");
+        // var configProfile = {
+        //     container: divProfile,
+        //     isTrueCoordinate: false, //是否是真实坐标（平剖面时，鼠标悬停会进行判断）
+        //     pointSize: pointSize
+        // };
+        // akxyCad.config(configProfile);
+        // profileLayer = akxyCad.getLayer();//获取当前剖面的Layer对象（用于多个div时）
+
+        // $.ajax({ //请求矿图信息
+        //     type: "GET",
+        //     url: "profile.json",
+        //     dataType: "json",
+        //     success: function (data) {
+        //         akxyCad.setLayer(planeLayer); //设置当前平面的Layer对象
+        //         akxyCad.clearCad(); //清空div下所有canvas数据
+        //         akxyCad.loadCad(cadInfo);
+        //         akxyCad.drawQuake(data.QuakeInfo);
+
+        //         akxyCad.setLayer(profileLayer);//设置当前剖面的Layer对象
+        //         akxyCad.clearCad();
+        //         akxyCad.loadCad(data.Etj);
+        //         akxyCad.drawQuake(data.QuakeInfo);
+        //     }
+        // })
+
+
+        // function showProfile() {
+        //     if (profileIndex == 0) {
+        //         $("#CadCanvas").animate({ 'height': '0' }).hide(1);
+        //         $("#CadProfile").animate({ 'height': '99%', 'margin-top': '0em' }, '100', function () {
+        //             akxyCad.setLayer(profileLayer);
+        //             akxyCad.resize(document.getElementById("CadProfile").clientWidth, document.getElementById("CadProfile").clientHeight);
+        //             akxyCad.moveTo(profileLayer.movetoPoint.x, profileLayer.movetoPoint.y);
+        //         }).show();
+        //         planeIndex = 0;
+        //         profileIndex = 1;
+        //         allIndex = 0;
+        //     }
+        // }
+
+        // function showAll() {
+        //     if (allIndex == 0) {
+        //         $("#CadCanvas").animate({ 'height': '49%' }, '100', function () {
+        //             akxyCad.setLayer(planeLayer);
+        //             akxyCad.resize(document.getElementById("CadCanvas").clientWidth, document.getElementById("CadCanvas").clientHeight);
+        //             akxyCad.moveTo(planeLayer.movetoPoint.x, planeLayer.movetoPoint.y);
+        //         }).show();
+
+        //         $("#CadProfile").animate({ 'height': '48%', 'margin-top': '1em' }, '100', function () {
+        //             akxyCad.setLayer(profileLayer);
+        //             akxyCad.resize(document.getElementById("CadProfile").clientWidth, document.getElementById("CadProfile").clientHeight);
+        //             akxyCad.moveTo(profileLayer.movetoPoint.x, profileLayer.movetoPoint.y);
+        //         }).show();
+        //         allIndex = 1;
+        //         planeIndex = 0;
+        //         profileIndex = 0;
+        //     }
+        // }
+        // var a = new AKXY()
+        // console.log(a)
+    </script>
+</body>
+</html>
